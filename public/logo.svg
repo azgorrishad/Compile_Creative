@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 40 40" xml:space="preserve">
+  <defs>
+    <linearGradient id="cc-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#D4BA8A"/>
+      <stop offset="55%" stop-color="#C6A56B"/>
+      <stop offset="100%" stop-color="#A9874E"/>
+    </linearGradient>
+  </defs>
+  <rect x="1" y="1" width="38" height="38" rx="9" fill="#27332C"/>
+  <rect x="1" y="1" width="38" height="38" rx="9" fill="none" stroke="#C6A56B" stroke-width="0.6" opacity="0.35"/>
+  <!-- Concentric C arcs — layers compiling into one -->
+  <path d="M 29 11.5 A 11.5 11.5 0 1 0 29 28.5" fill="none" stroke="url(#cc-gold)" stroke-width="2.6" stroke-linecap="round"/>
+  <path d="M 26.5 15 A 8 8 0 1 0 26.5 25" fill="none" stroke="url(#cc-gold)" stroke-width="1.6" stroke-linecap="round" opacity="0.7"/>
+  <path d="M 24.5 17.8 A 5 5 0 1 0 24.5 22.2" fill="none" stroke="url(#cc-gold)" stroke-width="1.1" stroke-linecap="round" opacity="0.5"/>
+  <!-- compile node -->
+  <circle cx="29" cy="20" r="1.7" fill="url(#cc-gold)"/>
+</svg>

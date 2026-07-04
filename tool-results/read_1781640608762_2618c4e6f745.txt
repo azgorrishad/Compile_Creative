@@ -1,0 +1,1821 @@
+     1→     1→"use client";
+     2→     2→
+     3→     3→import { useEffect, useRef, useState, useCallback, useSyncExternalStore } from "react";
+     4→     4→import { motion, AnimatePresence, useInView, useScroll, useTransform } from "framer-motion";
+     5→     5→import {
+     6→     6→  ArrowRight,
+     7→     7→  Menu,
+     8→     8→  X,
+     9→     9→  ChevronDown,
+    10→    10→  ExternalLink,
+    11→    11→  Linkedin,
+    12→    12→  Twitter,
+    13→    13→  Mail,
+    14→    14→} from "lucide-react";
+    15→    15→import Image from "next/image";
+    16→    16→import {
+    17→    17→  HeroParticleCanvas,
+    18→    18→  SectionParticleCanvas,
+    19→    19→  FloatingOrbs,
+    20→    20→  MagneticCursor,
+    21→    21→  GeometricWireframe,
+    22→    22→  NoiseGrainOverlay,
+    23→    23→  ParticleTrail,
+    24→    24→  GridLines,
+    25→    25→} from "@/components/ParticleCanvas";
+    26→    26→
+    27→    27→/* ─── Data ──────────────────────────────────────── */
+    28→    28→
+    29→    29→const NAV_LINKS: { label: string; href: string; external?: boolean }[] = [
+    30→    30→  { label: "Portfolio", href: "#work" },
+    31→    31→  { label: "The Compile Method", href: "#method" },
+    32→    32→  { label: "Inside The Thinking", href: "#thinking" },
+    33→    33→  { label: "About", href: "#about" },
+    34→    34→  { label: "Client Portal", href: "#", external: true },
+    35→    35→];
+    36→    36→
+    37→    37→const CAROUSEL_SLIDES = [
+    38→    38→  { num: "01", text: "Most businesses think they have a marketing problem." },
+    39→    39→  { num: "02", text: "Most businesses actually have a perception problem." },
+    40→    40→  {
+    41→    41→    num: "03",
+    42→    42→    text: "Average brands compete on price. And price is the easiest thing for competitors to undercut.",
+    43→    43→  },
+    44→    44→  {
+    45→    45→    num: "04",
+    46→    46→    text: "Premium brands compete on trust. Trust is earned through perception — before a single transaction.",
+    47→    47→  },
+    48→    48→  {
+    49→    49→    num: "05",
+    50→    50→    text: "Category leaders compete on meaning. Meaning is the only advantage that compounds over time.",
+    51→    51→  },
+    52→    52→  {
+    53→    53→    num: "06",
+    54→    54→    text: "Your customers decide what you're worth before they read a single word.",
+    55→    55→  },
+    56→    56→  {
+    57→    57→    num: "07",
+    58→    58→    text: "So what does your brand communicate in the first three seconds?",
+    59→    59→  },
+    60→    60→];
+    61→    61→
+    62→    62→const CASE_STUDIES = [
+    63→    63→  {
+    64→    64→    id: "01",
+    65→    65→    title: "Aria Milano",
+    66→    66→    category: "Perfume Brand",
+    67→    67→    situation:
+    68→    68→      "Visual identity lacked the authority of an Italian luxury fragrance. Inconsistent brand presentation across touchpoints. Premium price point was not backed by premium perception.",
+    69→    69→    change:
+    70→    70→      "Brand Strategy, Visual Identity, Packaging Direction, Communication Framework",
+    71→    71→    before: "We need a better logo.",
+    72→    72→    after:
+    73→    73→      "We need a luxury identity that justifies our price and commands respect before a single bottle is opened.",
+    74→    74→    result:
+    75→    75→      "The brand finally looked as premium as the scent itself — luxury perception aligned with pricing.",
+    76→    76→    insight:
+    77→    77→      "Luxury is not created by expensive packaging. Luxury is created by consistent perception across every touchpoint.",
+    78→    78→  },
+    79→    79→  {
+    80→    80→    id: "02",
+    81→    81→    title: "Looks Matter",
+    82→    82→    category: "Clothing Brand",
+    83→    83→    situation:
+    84→    84→      "No clear visual identity beyond a basic logo. Brand presence felt unpolished for a premium clothing line. Social media direction lacked consistency and editorial quality.",
+    85→    85→    change:
+    86→    86→      "Brand Identity, Logo Mark Design, Visual System, Social Media Direction",
+    87→    87→    before: "We need to look more professional.",
+    88→    88→    after:
+    89→    89→      "We need a brand identity that communicates craftsmanship before a customer even sees the clothes.",
+    90→    90→    result:
+    91→    91→      "A refined clothing brand with a needle-and-thread logo mark, minimalist visual identity, and a consistent social presence.",
+    92→    92→    insight:
+    93→    93→      "A clothing brand's identity is the first garment a customer tries on. If it doesn't fit, they walk away.",
+    94→    94→  },
+    95→    95→  {
+    96→    96→    id: "03",
+    97→    97→    title: "Naksha Bari",
+    98→    98→    category: "Cultural Fashion Brand",
+    99→    99→    situation:
+   100→   100→      "Heritage and craft were invisible in the brand presentation. Traditional patterns had no modern visual language. Brand failed to connect with younger, culturally-proud audiences.",
+   101→   101→    change: "Brand Strategy, Logo System, Brand Guidelines, Visual Identity",
+   102→   102→    before: "We need to look more modern.",
+   103→   103→    after:
+   104→   104→      "We need to honor our Bangladeshi heritage and make it aspirational for a new generation.",
+   105→   105→    result:
+   106→   106→      "A culturally rooted brand system that celebrates Bangladeshi craft and pattern through modern branding.",
+   107→   107→    insight:
+   108→   108→      "Culture is not a constraint. When positioned correctly, it becomes the brand's most powerful differentiator.",
+   109→   109→  },
+   110→   110→  {
+   111→   111→    id: "04",
+   112→   112→    title: "SumiCo",
+   113→   113→    category: "Collectibles & Toys",
+   114→   114→    situation:
+   115→   115→      "No brand identity or visual character to anchor the collectibles line. Nothing to differentiate from established brands. Brand lacked personality.",
+   116→   116→    change:
+   117→   117→      "Brand Identity, Character Design, Social Media System, Campaign Visuals",
+   118→   118→    before: "We need a logo and some social posts.",
+   119→   119→    after:
+   120→   120→      "We need a brand character that people form an emotional connection with before they ever buy.",
+   121→   121→    result:
+   122→   122→      "A fun, character-driven lifestyle brand with a distinct playful identity and creative campaign visuals.",
+   123→   123→    insight:
+   124→   124→      "In lifestyle brands, personality is the product. If your brand doesn't make people feel something, the product never gets a chance.",
+   125→   125→  },
+   126→   126→];
+   127→   127→
+   128→   128→const METHOD_STAGES = [
+   129→   129→  {
+   130→   130→    num: "01",
+   131→   131→    title: "Observe",
+   132→   132→    desc: "We study your market, competitors, and customers before touching a single pixel. Deep research into brand perception, competitive landscape, and customer psychology.",
+   133→   133→  },
+   134→   134→  {
+   135→   135→    num: "02",
+   136→   136→    title: "Position",
+   137→   137→    desc: "We find the gap between what you do and what your market believes. Strategic positioning that creates clear differentiation and a narrative impossible to ignore.",
+   138→   138→  },
+   139→   139→  {
+   140→   140→    num: "03",
+   141→   141→    title: "Design",
+   142→   142→    desc: "Every visual decision is a strategic decision. Nothing is decoration. Brand identity, digital experience, and communication systems built from strategy — not trends.",
+   143→   143→  },
+   144→   144→  {
+   145→   145→    num: "04",
+   146→   146→    title: "Deploy",
+   147→   147→    desc: "Systems that work without you. Processes that scale. We build the infrastructure, documentation, and workflows that let your brand operate consistently at any scale.",
+   148→   148→  },
+   149→   149→  {
+   150→   150→    num: "05",
+   151→   151→    title: "Refine",
+   152→   152→    desc: "Measure. Learn. Optimize. Ongoing measurement and iteration. We track perception shifts, engagement patterns, and business metrics to continuously refine the brand system.",
+   153→   153→  },
+   154→   154→];
+   155→   155→
+   156→   156→const MORE_TRANSFORMATIONS = [
+   157→   157→  {
+   158→   158→    name: "Flex City",
+   159→   159→    category: "Lifestyle Brand",
+   160→   160→    before: "We need a cooler logo.",
+   161→   161→    after: "We need to build a brand that the urban community claims as their own.",
+   162→   162→    insight:
+   163→   163→      "Urban lifestyle brands don't sell products — they sell belonging. The brand that owns the community, owns the market.",
+   164→   164→  },
+   165→   165→  {
+   166→   166→    name: "Ghera",
+   167→   167→    category: "Cultural Clothing",
+   168→   168→    before: "We need to modernize our look.",
+   169→   169→    after:
+   170→   170→      "We need a brand that celebrates our cultural roots while speaking to a modern audience.",
+   171→   171→    insight:
+   172→   172→      "The most powerful brands don't borrow from culture. They are born from it.",
+   173→   173→  },
+   174→   174→  {
+   175→   175→    name: "MT-Hut",
+   176→   176→    category: "E-commerce Brand",
+   177→   177→    before: "We need more traffic to our store.",
+   178→   178→    after:
+   179→   179→      "We need a brand that makes customers trust us before they ever reach the checkout.",
+   180→   180→    insight:
+   181→   181→      "E-commerce without brand is just a marketplace listing. Brand is the reason customers return.",
+   182→   182→  },
+   183→   183→  {
+   184→   184→    name: "Signature Style",
+   185→   185→    category: "Clothing & Lifestyle",
+   186→   186→    before: "We need to look cleaner.",
+   187→   187→    after:
+   188→   188→      "We need a brand system where every element earns its place and communicates premium quality.",
+   189→   189→    insight:
+   190→   190→      "Minimalism is not the absence of design. It is the presence of intention in every detail.",
+   191→   191→  },
+   192→   192→];
+   193→   193→
+   194→   194→/* ─── Animation Variants ────────────────────────── */
+   195→   195→
+   196→   196→const agencyEase = [0.16, 1, 0.3, 1] as const;
+   197→   197→const springEase = [0.22, 1, 0.36, 1] as const;
+   198→   198→
+   199→   199→const fadeInUp = {
+   200→   200→  hidden: { opacity: 0, y: 50, filter: "blur(4px)" },
+   201→   201→  visible: {
+   202→   202→    opacity: 1,
+   203→   203→    y: 0,
+   204→   204→    filter: "blur(0px)",
+   205→   205→    transition: { duration: 0.9, ease: agencyEase },
+   206→   206→  },
+   207→   207→};
+   208→   208→
+   209→   209→const fadeIn = {
+   210→   210→  hidden: { opacity: 0 },
+   211→   211→  visible: { opacity: 1, transition: { duration: 0.7 } },
+   212→   212→};
+   213→   213→
+   214→   214→const staggerContainer = {
+   215→   215→  hidden: {},
+   216→   216→  visible: {
+   217→   217→    transition: { staggerChildren: 0.1 },
+   218→   218→  },
+   219→   219→};
+   220→   220→
+   221→   221→const slideInLeft = {
+   222→   222→  hidden: { opacity: 0, x: -80, filter: "blur(4px)" },
+   223→   223→  visible: {
+   224→   224→    opacity: 1,
+   225→   225→    x: 0,
+   226→   226→    filter: "blur(0px)",
+   227→   227→    transition: { duration: 0.8, ease: agencyEase },
+   228→   228→  },
+   229→   229→};
+   230→   230→
+   231→   231→const slideInRight = {
+   232→   232→  hidden: { opacity: 0, x: 80, filter: "blur(4px)" },
+   233→   233→  visible: {
+   234→   234→    opacity: 1,
+   235→   235→    x: 0,
+   236→   236→    filter: "blur(0px)",
+   237→   237→    transition: { duration: 0.8, ease: agencyEase },
+   238→   238→  },
+   239→   239→};
+   240→   240→
+   241→   241→const scaleIn = {
+   242→   242→  hidden: { opacity: 0, scale: 0.88, filter: "blur(4px)" },
+   243→   243→  visible: {
+   244→   244→    opacity: 1,
+   245→   245→    scale: 1,
+   246→   246→    filter: "blur(0px)",
+   247→   247→    transition: { duration: 0.7, ease: springEase },
+   248→   248→  },
+   249→   249→};
+   250→   250→
+   251→   251→const revealLine = {
+   252→   252→  hidden: { scaleX: 0, originX: 0 },
+   253→   253→  visible: {
+   254→   254→    scaleX: 1,
+   255→   255→    transition: { duration: 1.0, ease: agencyEase },
+   256→   256→  },
+   257→   257→};
+   258→   258→
+   259→   259→/* ─── Typewriter Text Component ──────────────────── */
+   260→   260→
+   261→   261→const emptySubscribe = () => () => {};
+   262→   262→
+   263→   263→function useMounted() {
+   264→   264→  return useSyncExternalStore(
+   265→   265→    emptySubscribe,
+   266→   266→    () => true,
+   267→   267→    () => false
+   268→   268→  );
+   269→   269→}
+   270→   270→
+   271→   271→function TypewriterText({ text, delay = 0 }: { text: string; delay?: number }) {
+   272→   272→  const [displayText, setDisplayText] = useState("");
+   273→   273→  const [isTyping, setIsTyping] = useState(false);
+   274→   274→  const mounted = useMounted();
+   275→   275→  const ref = useRef(null);
+   276→   276→  const isInView = useInView(ref, { once: true });
+   277→   277→
+   278→   278→  useEffect(() => {
+   279→   279→    if (!isInView || !mounted) return;
+   280→   280→    let i = 0;
+   281→   281→    const timeout = setTimeout(() => {
+   282→   282→      setIsTyping(true);
+   283→   283→      const interval = setInterval(() => {
+   284→   284→        if (i < text.length) {
+   285→   285→          setDisplayText(text.slice(0, i + 1));
+   286→   286→          i++;
+   287→   287→        } else {
+   288→   288→          setIsTyping(false);
+   289→   289→          clearInterval(interval);
+   290→   290→        }
+   291→   291→      }, 40);
+   292→   292→      return () => clearInterval(interval);
+   293→   293→    }, delay);
+   294→   294→    return () => clearTimeout(timeout);
+   295→   295→  }, [isInView, text, delay, mounted]);
+   296→   296→
+   297→   297→  if (!mounted) {
+   298→   298→    return <span ref={ref}>{text}</span>;
+   299→   299→  }
+   300→   300→
+   301→   301→  return (
+   302→   302→    <span ref={ref} className={isTyping ? "typewriter-cursor" : ""} suppressHydrationWarning>
+   303→   303→      {displayText || text}
+   304→   304→    </span>
+   305→   305→  );
+   306→   306→}
+   307→   307→
+   308→   308→/* ─── Rotating Words Component ────────────────────── */
+   309→   309→
+   310→   310→function RotatingWords({ words, interval = 2500 }: { words: string[]; interval?: number }) {
+   311→   311→  const [index, setIndex] = useState(0);
+   312→   312→  const [isAnimating, setIsAnimating] = useState(true);
+   313→   313→  const mounted = useMounted();
+   314→   314→
+   315→   315→  useEffect(() => {
+   316→   316→    if (!mounted) return;
+   317→   317→    const timer = setInterval(() => {
+   318→   318→      setIsAnimating(false);
+   319→   319→      setTimeout(() => {
+   320→   320→        setIndex((prev) => (prev + 1) % words.length);
+   321→   321→        setIsAnimating(true);
+   322→   322→      }, 400);
+   323→   323→    }, interval);
+   324→   324→    return () => clearInterval(timer);
+   325→   325→  }, [words.length, interval, mounted]);
+   326→   326→
+   327→   327→  if (!mounted) {
+   328→   328→    return <span suppressHydrationWarning>{words[0]}</span>;
+   329→   329→  }
+   330→   330→
+   331→   331→  return (
+   332→   332→    <span className="inline-block overflow-hidden" style={{ perspective: "600px" }} suppressHydrationWarning>
+   333→   333→      <span
+   334→   334→        className={`inline-block ${isAnimating ? "animate-word-in" : "animate-word-out"}`}
+   335→   335→      >
+   336→   336→        {words[index]}
+   337→   337→      </span>
+   338→   338→    </span>
+   339→   339→  );
+   340→   340→}
+   341→   341→
+   342→   342→/* ─── 3D Tilt Card Component ──────────────────────── */
+   343→   343→
+   344→   344→function TiltCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+   345→   345→  const cardRef = useRef<HTMLDivElement>(null);
+   346→   346→
+   347→   347→  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+   348→   348→    const card = cardRef.current;
+   349→   349→    if (!card) return;
+   350→   350→    const rect = card.getBoundingClientRect();
+   351→   351→    const x = e.clientX - rect.left;
+   352→   352→    const y = e.clientY - rect.top;
+   353→   353→    const centerX = rect.width / 2;
+   354→   354→    const centerY = rect.height / 2;
+   355→   355→    const rotateX = (y - centerY) / centerY * -5;
+   356→   356→    const rotateY = (x - centerX) / centerX * 5;
+   357→   357→    card.style.transform = `perspective(1200px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.01, 1.01, 1.01)`;
+   358→   358→    card.style.setProperty("--mouse-x", `${x}px`);
+   359→   359→    card.style.setProperty("--mouse-y", `${y}px`);
+   360→   360→  }, []);
+   361→   361→
+   362→   362→  const handleMouseLeave = useCallback(() => {
+   363→   363→    const card = cardRef.current;
+   364→   364→    if (!card) return;
+   365→   365→    card.style.transform = "perspective(1200px) rotateX(0) rotateY(0) scale3d(1, 1, 1)";
+   366→   366→  }, []);
+   367→   367→
+   368→   368→  return (
+   369→   369→    <div
+   370→   370→      ref={cardRef}
+   371→   371→      className={`tilt-card ${className}`}
+   372→   372→      onMouseMove={handleMouseMove}
+   373→   373→      onMouseLeave={handleMouseLeave}
+   374→   374→    >
+   375→   375→      <div className="tilt-card-shine" />
+   376→   376→      {children}
+   377→   377→    </div>
+   378→   378→  );
+   379→   379→}
+   380→   380→
+   381→   381→/* ─── Animated Counter Component ────────────────── */
+   382→   382→
+   383→   383→function AnimatedCounter({ value, suffix = "" }: { value: string; suffix?: string }) {
+   384→   384→  const ref = useRef(null);
+   385→   385→  const isInView = useInView(ref, { once: true });
+   386→   386→  const [count, setCount] = useState(0);
+   387→   387→  const mounted = useMounted();
+   388→   388→  const numericValue = parseInt(value.replace(/[^0-9]/g, ""));
+   389→   389→  const prefix = value.match(/^[^0-9]*/)?.[0] || "";
+   390→   390→  const suffixMatch = value.match(/[^0-9]*$/)?.[0] || "";
+   391→   391→
+   392→   392→  useEffect(() => {
+   393→   393→    if (!isInView || isNaN(numericValue) || !mounted) return;
+   394→   394→    const duration = 1500;
+   395→   395→    const startTime = Date.now();
+   396→   396→    const animate = () => {
+   397→   397→      const elapsed = Date.now() - startTime;
+   398→   398→      const progress = Math.min(elapsed / duration, 1);
+   399→   399→      const eased = 1 - Math.pow(1 - progress, 3);
+   400→   400→      setCount(Math.round(numericValue * eased));
+   401→   401→      if (progress < 1) requestAnimationFrame(animate);
+   402→   402→    };
+   403→   403→    requestAnimationFrame(animate);
+   404→   404→  }, [isInView, numericValue, mounted]);
+   405→   405→
+   406→   406→  if (!mounted) {
+   407→   407→    return (
+   408→   408→      <span ref={ref} className="stat-number" suppressHydrationWarning>
+   409→   409→        {prefix}{value}{suffixMatch}{suffix}
+   410→   410→      </span>
+   411→   411→    );
+   412→   412→  }
+   413→   413→
+   414→   414→  if (isNaN(numericValue)) {
+   415→   415→    return (
+   416→   416→      <motion.span
+   417→   417→        ref={ref}
+   418→   418→        initial={{ opacity: 0, y: 20 }}
+   419→   419→        animate={isInView ? { opacity: 1, y: 0 } : {}}
+   420→   420→        transition={{ duration: 0.6, ease: agencyEase }}
+   421→   421→        className="stat-number"
+   422→   422→        suppressHydrationWarning
+   423→   423→      >
+   424→   424→        {isInView ? value : value}
+   425→   425→        {suffix}
+   426→   426→      </motion.span>
+   427→   427→    );
+   428→   428→  }
+   429→   429→
+   430→   430→  return (
+   431→   431→    <motion.span
+   432→   432→      ref={ref}
+   433→   433→      initial={{ opacity: 0, y: 20 }}
+   434→   434→      animate={isInView ? { opacity: 1, y: 0 } : {}}
+   435→   435→      transition={{ duration: 0.6, ease: agencyEase }}
+   436→   436→      className="stat-number"
+   437→   437→      suppressHydrationWarning
+   438→   438→    >
+   439→   439→      {isInView ? `${prefix}${count}${suffixMatch}` : `${prefix}0${suffixMatch}`}
+   440→   440→      {suffix}
+   441→   441→    </motion.span>
+   442→   442→  );
+   443→   443→}
+   444→   444→
+   445→   445→/* ─── Reusable Section Wrapper ──────────────────── */
+   446→   446→
+   447→   447→function Section({
+   448→   448→  children,
+   449→   449→  className = "",
+   450→   450→  id,
+   451→   451→  dark = false,
+   452→   452→}: {
+   453→   453→  children: React.ReactNode;
+   454→   454→  className?: string;
+   455→   455→  id?: string;
+   456→   456→  dark?: boolean;
+   457→   457→}) {
+   458→   458→  const ref = useRef(null);
+   459→   459→  const isInView = useInView(ref, { once: true, margin: "-80px" });
+   460→   460→
+   461→   461→  return (
+   462→   462→    <motion.section
+   463→   463→      ref={ref}
+   464→   464→      id={id}
+   465→   465→      initial="hidden"
+   466→   466→      animate={isInView ? "visible" : "hidden"}
+   467→   467→      variants={staggerContainer}
+   468→   468→      className={`${dark ? "bg-[var(--bg-forest)] text-[var(--bg-base)]" : "bg-[var(--bg-base)] text-[var(--bg-forest)]"} ${className}`}
+   469→   469→    >
+   470→   470→      {children}
+   471→   471→    </motion.section>
+   472→   472→  );
+   473→   473→}
+   474→   474→
+   475→   475→/* ─── Navigation ────────────────────────────────── */
+   476→   476→
+   477→   477→function Navigation() {
+   478→   478→  const [scrolled, setScrolled] = useState(false);
+   479→   479→  const [mobileOpen, setMobileOpen] = useState(false);
+   480→   480→
+   481→   481→  useEffect(() => {
+   482→   482→    const onScroll = () => setScrolled(window.scrollY > 60);
+   483→   483→    window.addEventListener("scroll", onScroll, { passive: true });
+   484→   484→    return () => window.removeEventListener("scroll", onScroll);
+   485→   485→  }, []);
+   486→   486→
+   487→   487→  const closeMobile = useCallback(() => setMobileOpen(false), []);
+   488→   488→
+   489→   489→  return (
+   490→   490→    <>
+   491→   491→      <motion.nav
+   492→   492→        initial={{ y: -20, opacity: 0 }}
+   493→   493→        animate={{ y: 0, opacity: 1 }}
+   494→   494→        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+   495→   495→        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+   496→   496→          scrolled
+   497→   497→            ? "bg-[var(--bg-forest)]/95 backdrop-blur-md shadow-lg shadow-black/10"
+   498→   498→            : "bg-transparent"
+   499→   499→        }`}
+   500→   500→      >
+   501→   501→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   502→   502→          <div className="flex items-center justify-between h-16 sm:h-20">
+   503→   503→            {/* Logo */}
+   504→   504→            <a
+   505→   505→              href="#"
+   506→   506→              className="flex items-center gap-3 magnetic-link"
+   507→   507→            >
+   508→   508→              <motion.div
+   509→   509→                initial={{ opacity: 0, scale: 0.5, rotate: -10 }}
+   510→   510→                animate={{ opacity: 1, scale: 1, rotate: 0 }}
+   511→   511→                transition={{ duration: 0.8, ease: agencyEase }}
+   512→   512→              >
+   513→   513→                <Image
+   514→   514→                  src="/logo.png"
+   515→   515→                  alt="Compile Creative"
+   516→   516→                  width={36}
+   517→   517→                  height={36}
+   518→   518→                  className="h-8 sm:h-9 w-auto"
+   519→   519→                  priority
+   520→   520→                />
+   521→   521→              </motion.div>
+   522→   522→              <motion.span
+   523→   523→                initial={{ opacity: 0, x: -10 }}
+   524→   524→                animate={{ opacity: 1, x: 0 }}
+   525→   525→                transition={{ duration: 0.6, delay: 0.3, ease: agencyEase }}
+   526→   526→                className="font-label text-sm sm:text-base font-bold tracking-widest text-[var(--gold)] uppercase"
+   527→   527→              >
+   528→   528→                Compile Creative
+   529→   529→              </motion.span>
+   530→   530→            </a>
+   531→   531→
+   532→   532→            {/* Desktop Nav */}
+   533→   533→            <div className="hidden md:flex items-center gap-8">
+   534→   534→              {NAV_LINKS.map((link, i) => (
+   535→   535→                <motion.a
+   536→   536→                  key={link.href + link.label}
+   537→   537→                  href={link.href}
+   538→   538→                  initial={{ opacity: 0, y: -10 }}
+   539→   539→                  animate={{ opacity: 1, y: 0 }}
+   540→   540→                  transition={{ delay: 0.1 * i, duration: 0.4 }}
+   541→   541→                  className="font-label text-xs uppercase tracking-widest text-[var(--bg-base)]/70 hover:text-[var(--gold)] transition-colors duration-300 gold-underline flex items-center gap-1 magnetic-link"
+   542→   542→                  {...(link.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+   543→   543→                >
+   544→   544→                  {link.label}
+   545→   545→                  {link.external && <ExternalLink size={10} />}
+   546→   546→                </motion.a>
+   547→   547→              ))}
+   548→   548→              <a
+   549→   549→                href="#audit"
+   550→   550→                className="font-label text-xs uppercase tracking-widest px-5 py-2.5 border border-[var(--gold)] text-[var(--gold)] hover:bg-[var(--gold)] hover:text-[var(--bg-forest)] transition-all duration-300 btn-gold"
+   551→   551→              >
+   552→   552→                Book Audit
+   553→   553→              </a>
+   554→   554→            </div>
+   555→   555→
+   556→   556→            {/* Mobile toggle */}
+   557→   557→            <button
+   558→   558→              onClick={() => setMobileOpen(!mobileOpen)}
+   559→   559→              className="md:hidden p-2 text-[var(--bg-base)] min-w-[44px] min-h-[44px] flex items-center justify-center"
+   560→   560→              aria-label={mobileOpen ? "Close menu" : "Open menu"}
+   561→   561→            >
+   562→   562→              {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+   563→   563→            </button>
+   564→   564→          </div>
+   565→   565→        </div>
+   566→   566→      </motion.nav>
+   567→   567→
+   568→   568→      {/* Mobile Menu */}
+   569→   569→      <AnimatePresence>
+   570→   570→        {mobileOpen && (
+   571→   571→          <motion.div
+   572→   572→            initial={{ opacity: 0 }}
+   573→   573→            animate={{ opacity: 1 }}
+   574→   574→            exit={{ opacity: 0 }}
+   575→   575→            transition={{ duration: 0.3 }}
+   576→   576→            className="fixed inset-0 z-40 bg-[var(--bg-forest)]/98 mobile-menu-overlay md:hidden"
+   577→   577→          >
+   578→   578→            <div className="flex flex-col items-center justify-center h-full gap-8">
+   579→   579→              {/* Mobile menu logo */}
+   580→   580→              <motion.div
+   581→   581→                initial={{ opacity: 0, scale: 0.8 }}
+   582→   582→                animate={{ opacity: 1, scale: 1 }}
+   583→   583→                transition={{ duration: 0.4 }}
+   584→   584→                className="mb-4"
+   585→   585→              >
+   586→   586→                <Image
+   587→   587→                  src="/logo.png"
+   588→   588→                  alt="Compile Creative"
+   589→   589→                  width={48}
+   590→   590→                  height={48}
+   591→   591→                  className="h-12 w-auto"
+   592→   592→                />
+   593→   593→              </motion.div>
+   594→   594→              {NAV_LINKS.map((link, i) => (
+   595→   595→                <motion.a
+   596→   596→                  key={link.href + link.label}
+   597→   597→                  href={link.href}
+   598→   598→                  onClick={link.external ? undefined : closeMobile}
+   599→   599→                  initial={{ opacity: 0, y: 20 }}
+   600→   600→                  animate={{ opacity: 1, y: 0 }}
+   601→   601→                  transition={{ delay: i * 0.08, duration: 0.4 }}
+   602→   602→                  className="font-label text-lg uppercase tracking-widest text-[var(--bg-base)]/80 hover:text-[var(--gold)] transition-colors flex items-center gap-2 min-h-[44px]"
+   603→   603→                  {...(link.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+   604→   604→                >
+   605→   605→                  {link.label}
+   606→   606→                  {link.external && <ExternalLink size={14} />}
+   607→   607→                </motion.a>
+   608→   608→              ))}
+   609→   609→              <motion.a
+   610→   610→                href="#audit"
+   611→   611→                onClick={closeMobile}
+   612→   612→                initial={{ opacity: 0, y: 20 }}
+   613→   613→                animate={{ opacity: 1, y: 0 }}
+   614→   614→                transition={{ delay: 0.35, duration: 0.4 }}
+   615→   615→                className="font-label text-sm uppercase tracking-widest px-8 py-3 border border-[var(--gold)] text-[var(--gold)] hover:bg-[var(--gold)] hover:text-[var(--bg-forest)] transition-all mt-4"
+   616→   616→              >
+   617→   617→                Book a Strategy Audit
+   618→   618→              </motion.a>
+   619→   619→            </div>
+   620→   620→          </motion.div>
+   621→   621→        )}
+   622→   622→      </AnimatePresence>
+   623→   623→    </>
+   624→   624→  );
+   625→   625→}
+   626→   626→
+   627→   627→/* ─── Hero Section ──────────────────────────────── */
+   628→   628→
+   629→   629→function HeroSection() {
+   630→   630→  const ref = useRef(null);
+   631→   631→  const { scrollYProgress } = useScroll({
+   632→   632→    target: ref,
+   633→   633→    offset: ["start start", "end start"],
+   634→   634→  });
+   635→   635→  const y = useTransform(scrollYProgress, [0, 1], [0, 150]);
+   636→   636→  const opacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
+   637→   637→  const scale = useTransform(scrollYProgress, [0, 0.5], [1, 1.05]);
+   638→   638→
+   639→   639→  return (
+   640→   640→    <section
+   641→   641→      ref={ref}
+   642→   642→      className="relative min-h-screen flex items-center justify-center hero-gradient-transition overflow-hidden"
+   643→   643→    >
+   644→   644→      {/* Background */}
+   645→   645→      <motion.div style={{ y, scale }} className="absolute inset-0 z-0">
+   646→   646→        <div className="absolute inset-0 bg-gradient-to-br from-[var(--bg-forest)] via-[var(--dark-sage)] to-[var(--sage)]" />
+   647→   647→      </motion.div>
+   648→   648→
+   649→   649→      {/* Grid lines */}
+   650→   650→      <GridLines />
+   651→   651→
+   652→   652→      {/* Floating Orbs */}
+   653→   653→      <FloatingOrbs />
+   654→   654→
+   655→   655→      {/* 3D Particle System */}
+   656→   656→      <HeroParticleCanvas />
+   657→   657→
+   658→   658→      {/* 3D Wireframe Shape */}
+   659→   659→      <GeometricWireframe />
+   660→   660→
+   661→   661→      {/* Noise grain texture */}
+   662→   662→      <NoiseGrainOverlay />
+   663→   663→
+   664→   664→      {/* Decorative floating geometric shapes */}
+   665→   665→      <div className="absolute inset-0 z-[1] pointer-events-none overflow-hidden">
+   666→   666→        <div className="absolute top-[15%] left-[8%] w-16 h-16 border border-[var(--gold)]/10 rotate-45 animate-geo-float-1 hidden lg:block" />
+   667→   667→        <div className="absolute top-[60%] right-[12%] w-12 h-12 border border-[var(--gold)]/8 animate-geo-float-2 hidden lg:block" style={{ clipPath: "polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)" }} />
+   668→   668→        <div className="absolute bottom-[25%] left-[15%] w-8 h-8 border border-[var(--gold)]/6 rounded-full animate-geo-float-2 hidden lg:block" />
+   669→   669→        <div className="absolute top-[35%] right-[25%] w-20 h-20 border border-[var(--gold)]/5 animate-geo-float-1 hidden lg:block" style={{ clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)" }} />
+   670→   670→      </div>
+   671→   671→
+   672→   672→      {/* Floating stats */}
+   673→   673→      <div className="absolute top-28 right-6 sm:right-12 lg:right-20 z-10 hidden sm:block">
+   674→   674→        <motion.div
+   675→   675→          initial={{ opacity: 0, x: 30 }}
+   676→   676→          animate={{ opacity: 1, x: 0 }}
+   677→   677→          transition={{ delay: 1.2, duration: 0.8 }}
+   678→   678→          className="space-y-4"
+   679→   679→        >
+   680→   680→          <div className="font-label text-[10px] uppercase tracking-widest text-[var(--gold)]/60 text-right">
+   681→   681→            Verified Strategic Partner
+   682→   682→          </div>
+   683→   683→          <div className="text-right space-y-2">
+   684→   684→            <div className="font-display text-2xl lg:text-3xl font-light text-[var(--gold)] stat-number">
+   685→   685→              +340%
+   686→   686→            </div>
+   687→   687→            <div className="font-label text-[9px] uppercase tracking-widest text-[var(--bg-base)]/40">
+   688→   688→              Conversion
+   689→   689→            </div>
+   690→   690→            <div className="font-display text-2xl lg:text-3xl font-light text-[var(--gold)] stat-number">
+   691→   691→              Revenue &uarr; 24.8%
+   692→   692→            </div>
+   693→   693→            <div className="font-label text-[9px] uppercase tracking-widest text-[var(--bg-base)]/40">
+   694→   694→              Growth
+   695→   695→            </div>
+   696→   696→            <div className="font-display text-2xl lg:text-3xl font-light text-[var(--gold)] stat-number">
+   697→   697→              7 markets
+   698→   698→            </div>
+   699→   699→            <div className="font-label text-[9px] uppercase tracking-widest text-[var(--bg-base)]/40">
+   700→   700→              Active
+   701→   701→            </div>
+   702→   702→          </div>
+   703→   703→        </motion.div>
+   704→   704→      </div>
+   705→   705→
+   706→   706→      {/* Content */}
+   707→   707→      <motion.div
+   708→   708→        style={{ opacity }}
+   709→   709→        className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 text-center"
+   710→   710→      >
+   711→   711→        <motion.div
+   712→   712→          initial={{ opacity: 0, y: 10 }}
+   713→   713→          animate={{ opacity: 1, y: 0 }}
+   714→   714→          transition={{ duration: 0.8, ease: agencyEase }}
+   715→   715→          className="font-label text-[10px] sm:text-xs uppercase tracking-[0.3em] text-[var(--gold)] mb-6 sm:mb-8"
+   716→   716→        >
+   717→   717→          <RotatingWords words={["Strategy", "Design", "Growth", "Positioning", "Identity"]} interval={2500} />
+   718→   718→          &middot; That Compounds
+   719→   719→        </motion.div>
+   720→   720→
+   721→   721→        <motion.h1
+   722→   722→          initial={{ opacity: 0, y: 30 }}
+   723→   723→          animate={{ opacity: 1, y: 0 }}
+   724→   724→          transition={{ duration: 0.9, ease: agencyEase, delay: 0.2 }}
+   725→   725→          className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-light text-[var(--bg-base)] leading-[1.1] mb-6 sm:mb-8"
+   726→   726→        >
+   727→   727→          Build Brands Worth{" "}
+   728→   728→          <span className="text-shimmer">More</span>{" "}
+   729→   729→          Tomorrow Than They Are Today.
+   730→   730→        </motion.h1>
+   731→   731→
+   732→   732→        <motion.p
+   733→   733→          initial={{ opacity: 0, y: 20 }}
+   734→   734→          animate={{ opacity: 1, y: 0 }}
+   735→   735→          transition={{ duration: 0.8, ease: agencyEase, delay: 0.5 }}
+   736→   736→          className="text-sm sm:text-base md:text-lg text-[var(--bg-base)]/60 max-w-2xl mx-auto mb-8 sm:mb-10 leading-relaxed"
+   737→   737→        >
+   738→   738→          <TypewriterText text="We partner with ambitious founders to strengthen positioning, eliminate operational friction, and create systems that increase enterprise value." delay={1200} />
+   739→   739→        </motion.p>
+   740→   740→
+   741→   741→        <motion.div
+   742→   742→          initial={{ opacity: 0, y: 20 }}
+   743→   743→          animate={{ opacity: 1, y: 0 }}
+   744→   744→          transition={{ duration: 0.8, ease: agencyEase, delay: 0.7 }}
+   745→   745→          className="flex flex-col sm:flex-row items-center justify-center gap-4"
+   746→   746→        >
+   747→   747→          <a
+   748→   748→            href="#audit"
+   749→   749→            className="font-label text-xs sm:text-sm uppercase tracking-widest px-8 py-4 bg-[var(--gold)] text-[var(--bg-forest)] hover:bg-[var(--gold-light)] transition-all duration-300 btn-gold min-w-[44px] min-h-[44px] flex items-center justify-center animate-pulse-glow"
+   750→   750→          >
+   751→   751→            Book a Strategy Audit
+   752→   752→          </a>
+   753→   753→          <a
+   754→   754→            href="#work"
+   755→   755→            className="font-label text-xs sm:text-sm uppercase tracking-widest px-8 py-4 border border-[var(--bg-base)]/30 text-[var(--bg-base)]/70 hover:border-[var(--gold)] hover:text-[var(--gold)] transition-all duration-300 min-w-[44px] min-h-[44px] flex items-center justify-center"
+   756→   756→          >
+   757→   757→            View Our Work
+   758→   758→          </a>
+   759→   759→        </motion.div>
+   760→   760→
+   761→   761→        {/* Scroll indicator */}
+   762→   762→        <motion.div
+   763→   763→          initial={{ opacity: 0 }}
+   764→   764→          animate={{ opacity: 1 }}
+   765→   765→          transition={{ delay: 1.5, duration: 0.8 }}
+   766→   766→          className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 animate-scroll-hint"
+   767→   767→        >
+   768→   768→          <ChevronDown className="text-[var(--gold)]/40" size={24} />
+   769→   769→        </motion.div>
+   770→   770→      </motion.div>
+   771→   771→    </section>
+   772→   772→  );
+   773→   773→}
+   774→   774→
+   775→   775→/* ─── Agency Marquee Ticker ──────────────────────── */
+   776→   776→
+   777→   777→function AgencyMarquee() {
+   778→   778→  const items = [
+   779→   779→    "Brand Strategy",
+   780→   780→    "✦",
+   781→   781→    "Visual Identity",
+   782→   782→    "✦",
+   783→   783→    "Positioning",
+   784→   784→    "✦",
+   785→   785→    "Design Systems",
+   786→   786→    "✦",
+   787→   787→    "Growth Consulting",
+   788→   788→    "✦",
+   789→   789→    "Creative Direction",
+   790→   790→    "✦",
+   791→   791→    "Enterprise Value",
+   792→   792→    "✦",
+   793→   793→    "Perception Design",
+   794→   794→    "✦",
+   795→   795→  ];
+   796→   796→
+   797→   797→  return (
+   798→   798→    <div className="relative overflow-hidden bg-[var(--bg-forest)] py-4 sm:py-5 border-y border-[var(--gold)]/10">
+   799→   799→      {/* Left fade */}
+   800→   800→      <div className="absolute left-0 top-0 bottom-0 w-24 sm:w-40 bg-gradient-to-r from-[var(--bg-forest)] to-transparent z-10 pointer-events-none" />
+   801→   801→      {/* Right fade */}
+   802→   802→      <div className="absolute right-0 top-0 bottom-0 w-24 sm:w-40 bg-gradient-to-l from-[var(--bg-forest)] to-transparent z-10 pointer-events-none" />
+   803→   803→
+   804→   804→      <div className="flex whitespace-nowrap animate-marquee">
+   805→   805→        {[...items, ...items, ...items].map((item, i) => (
+   806→   806→          <span
+   807→   807→            key={i}
+   808→   808→            className={`mx-4 sm:mx-6 text-sm sm:text-base font-label uppercase tracking-widest ${
+   809→   809→              item === "✦"
+   810→   810→                ? "text-[var(--gold)]/40"
+   811→   811→                : "text-[var(--bg-base)]/30 hover:text-[var(--gold)]/60 transition-colors duration-300"
+   812→   812→            }`}
+   813→   813→          >
+   814→   814→            {item}
+   815→   815→          </span>
+   816→   816→        ))}
+   817→   817→      </div>
+   818→   818→    </div>
+   819→   819→  );
+   820→   820→}
+   821→   821→
+   822→   822→/* ─── Split Text Reveal Word ─────────────────────── */
+   823→   823→
+   824→   824→function SplitRevealText({
+   825→   825→  text,
+   826→   826→  className = "",
+   827→   827→}: {
+   828→   828→  text: string;
+   829→   829→  className?: string;
+   830→   830→}) {
+   831→   831→  const ref = useRef(null);
+   832→   832→  const isInView = useInView(ref, { once: true, margin: "-50px" });
+   833→   833→
+   834→   834→  const words = text.split(" ");
+   835→   835→
+   836→   836→  return (
+   837→   837→    <span ref={ref} className={className}>
+   838→   838→      {words.map((word, i) => (
+   839→   839→        <motion.span
+   840→   840→          key={i}
+   841→   841→          initial={{ opacity: 0, y: 20, filter: "blur(6px)" }}
+   842→   842→          animate={
+   843→   843→            isInView
+   844→   844→              ? { opacity: 1, y: 0, filter: "blur(0px)" }
+   845→   845→              : { opacity: 0, y: 20, filter: "blur(6px)" }
+   846→   846→          }
+   847→   847→          transition={{
+   848→   848→            duration: 0.6,
+   849→   849→            delay: i * 0.06,
+   850→   850→            ease: agencyEase,
+   851→   851→          }}
+   852→   852→          className="inline-block mr-[0.3em]"
+   853→   853→        >
+   854→   854→          {word}
+   855→   855→        </motion.span>
+   856→   856→      ))}
+   857→   857→    </span>
+   858→   858→  );
+   859→   859→}
+   860→   860→
+   861→   861→/* ─── Animated Stats Bar ──────────────────────────── */
+   862→   862→
+   863→   863→function StatsBar() {
+   864→   864→  const ref = useRef(null);
+   865→   865→  const isInView = useInView(ref, { once: true, margin: "-80px" });
+   866→   866→
+   867→   867→  const stats = [
+   868→   868→    { label: "Brand Transformations", value: "40", prefix: "+", suffix: "" },
+   869→   869→    { label: "Markets Served", value: "7", prefix: "", suffix: "" },
+   870→   870→    { label: "Client Retention", value: "94", prefix: "", suffix: "%" },
+   871→   871→    { label: "Average Conversion Lift", value: "340", prefix: "+", suffix: "%" },
+   872→   872→  ];
+   873→   873→
+   874→   874→  return (
+   875→   875→    <div
+   876→   876→      ref={ref}
+   877→   877→      className="py-12 sm:py-16 bg-[var(--bg-base)] border-b border-[var(--bg-forest)]/5"
+   878→   878→    >
+   879→   879→      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   880→   880→        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+   881→   881→          {stats.map((stat, i) => (
+   882→   882→            <motion.div
+   883→   883→              key={stat.label}
+   884→   884→              initial={{ opacity: 0, y: 30 }}
+   885→   885→              animate={isInView ? { opacity: 1, y: 0 } : {}}
+   886→   886→              transition={{
+   887→   887→                duration: 0.7,
+   888→   888→                delay: i * 0.15,
+   889→   889→                ease: agencyEase,
+   890→   890→              }}
+   891→   891→              className="text-center sm:text-left"
+   892→   892→            >
+   893→   893→              <motion.div
+   894→   894→                initial={{ opacity: 0, scale: 0.5 }}
+   895→   895→                animate={isInView ? { opacity: 1, scale: 1 } : {}}
+   896→   896→                transition={{
+   897→   897→                  duration: 0.5,
+   898→   898→                  delay: i * 0.15 + 0.2,
+   899→   899→                  ease: springEase,
+   900→   900→                }}
+   901→   901→                className="font-display text-3xl sm:text-4xl lg:text-5xl font-light text-[var(--bg-forest)] stat-number"
+   902→   902→              >
+   903→   903→                {stat.prefix}<AnimatedCounter value={stat.value} />{stat.suffix}
+   904→   904→              </motion.div>
+   905→   905→              <div className="font-label text-[10px] sm:text-xs uppercase tracking-widest text-[var(--sage)] mt-2">
+   906→   906→                {stat.label}
+   907→   907→              </div>
+   908→   908→            </motion.div>
+   909→   909→          ))}
+   910→   910→        </div>
+   911→   911→      </div>
+   912→   912→    </div>
+   913→   913→  );
+   914→   914→}
+   915→   915→
+   916→   916→/* ─── Cost of Looking Average ────────────────────── */
+   917→   917→
+   918→   918→function CostOfLookingAverage() {
+   919→   919→  const [currentSlide, setCurrentSlide] = useState(0);
+   920→   920→  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+   921→   921→
+   922→   922→  const startInterval = useCallback(() => {
+   923→   923→    if (intervalRef.current) clearInterval(intervalRef.current);
+   924→   924→    intervalRef.current = setInterval(() => {
+   925→   925→      setCurrentSlide((prev) => (prev + 1) % CAROUSEL_SLIDES.length);
+   926→   926→    }, 4000);
+   927→   927→  }, []);
+   928→   928→
+   929→   929→  useEffect(() => {
+   930→   930→    startInterval();
+   931→   931→    return () => {
+   932→   932→      if (intervalRef.current) clearInterval(intervalRef.current);
+   933→   933→    };
+   934→   934→  }, [startInterval]);
+   935→   935→
+   936→   936→  const goToSlide = (index: number) => {
+   937→   937→    setCurrentSlide(index);
+   938→   938→    startInterval();
+   939→   939→  };
+   940→   940→
+   941→   941→  return (
+   942→   942→    <Section dark className="py-20 sm:py-28 lg:py-36 relative overflow-hidden grain-overlay">
+   943→   943→      <SectionParticleCanvas dark />
+   944→   944→      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+   945→   945→        <motion.div variants={fadeInUp} className="mb-12 sm:mb-16">
+   946→   946→          <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-light text-[var(--bg-base)] mb-4">
+   947→   947→            The Cost Of Looking Average
+   948→   948→          </h2>
+   949→   949→          <motion.div variants={revealLine} className="w-16 h-0.5 bg-[var(--gold)]" />
+   950→   950→        </motion.div>
+   951→   951→
+   952→   952→        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-start">
+   953→   953→          {/* Slide counter */}
+   954→   954→          <motion.div variants={slideInLeft} className="lg:col-span-2">
+   955→   955→            <div className="font-display text-6xl sm:text-7xl lg:text-8xl font-light text-[var(--gold)]/30 animate-breathe">
+   956→   956→              {CAROUSEL_SLIDES[currentSlide].num}
+   957→   957→            </div>
+   958→   958→            <div className="font-label text-xs text-[var(--bg-base)]/40 mt-2 uppercase tracking-widest">
+   959→   959→              {CAROUSEL_SLIDES[currentSlide].num} / {String(CAROUSEL_SLIDES.length).padStart(2, "0")}
+   960→   960→            </div>
+   961→   961→          </motion.div>
+   962→   962→
+   963→   963→          {/* Slide content */}
+   964→   964→          <div className="lg:col-span-7">
+   965→   965→            <AnimatePresence mode="wait">
+   966→   966→              <motion.p
+   967→   967→                key={currentSlide}
+   968→   968→                initial={{ opacity: 0, y: 20, filter: "blur(4px)" }}
+   969→   969→                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+   970→   970→                exit={{ opacity: 0, y: -20, filter: "blur(4px)" }}
+   971→   971→                transition={{ duration: 0.5, ease: agencyEase }}
+   972→   972→                className="font-display text-xl sm:text-2xl md:text-3xl font-light text-[var(--bg-base)]/90 leading-relaxed"
+   973→   973→              >
+   974→   974→                {CAROUSEL_SLIDES[currentSlide].text}
+   975→   975→              </motion.p>
+   976→   976→            </AnimatePresence>
+   977→   977→          </div>
+   978→   978→
+   979→   979→          {/* Progress dots */}
+   980→   980→          <motion.div
+   981→   981→            variants={slideInRight}
+   982→   982→            className="lg:col-span-3 flex lg:flex-col gap-2 lg:pt-2"
+   983→   983→          >
+   984→   984→            {CAROUSEL_SLIDES.map((_, i) => (
+   985→   985→              <button
+   986→   986→                key={i}
+   987→   987→                onClick={() => goToSlide(i)}
+   988→   988→                className={`w-8 h-1 lg:w-1 lg:h-8 transition-all duration-500 ${
+   989→   989→                  i === currentSlide
+   990→   990→                    ? "bg-[var(--gold)] lg:h-12"
+   991→   991→                    : "bg-[var(--bg-base)]/20 hover:bg-[var(--bg-base)]/40"
+   992→   992→                }`}
+   993→   993→                aria-label={`Go to slide ${i + 1}`}
+   994→   994→              />
+   995→   995→            ))}
+   996→   996→          </motion.div>
+   997→   997→        </div>
+   998→   998→      </div>
+   999→   999→    </Section>
+  1000→  1000→  );
+  1001→  1001→}
+  1002→  1002→
+  1003→  1003→/* ─── The Foundation ─────────────────────────────── */
+  1004→  1004→
+  1005→  1005→function TheFoundation() {
+  1006→  1006→  return (
+  1007→  1007→    <Section className="py-20 sm:py-28 lg:py-36">
+  1008→  1008→      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  1009→  1009→        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20">
+  1010→  1010→          <motion.div variants={slideInLeft} className="lg:col-span-5">
+  1011→  1011→            <div className="font-label text-[10px] uppercase tracking-[0.3em] text-[var(--sage)] mb-4">
+  1012→  1012→              The Foundation
+  1013→  1013→            </div>
+  1014→  1014→            <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-light text-[var(--bg-forest)] leading-[1.15]">
+  1015→  1015→              Why Compile Creative Exists.
+  1016→  1016→            </h2>
+  1017→  1017→          </motion.div>
+  1018→  1018→
+  1019→  1019→          <motion.div variants={slideInRight} className="lg:col-span-7 space-y-6">
+  1020→  1020→            <p className="text-sm sm:text-base text-[var(--bg-forest)]/70 leading-relaxed">
+  1021→  1021→              Most agencies deliver assets. A logo. A website. A brand guide
+  1022→  1022→              that sits in a Google Drive folder and slowly gathers digital
+  1023→  1023→              dust.
+  1024→  1024→            </p>
+  1025→  1025→            <p className="text-sm sm:text-base text-[var(--bg-forest)]/70 leading-relaxed">
+  1026→  1026→              Most businesses don&apos;t need more assets. They need leverage.
+  1027→  1027→              They need someone who understands that design is a strategic tool
+  1028→  1028→              — not a production service. That positioning is the foundation of
+  1029→  1029→              every visual decision. That systems compound while one-off
+  1030→  1030→              deliverables decay.
+  1031→  1031→            </p>
+  1032→  1032→            <p className="text-sm sm:text-base text-[var(--bg-forest)]/70 leading-relaxed">
+  1033→  1033→              Compile Creative exists to bridge strategy, design, systems, and
+  1034→  1034→              growth — so every decision increases the value of your business.
+  1035→  1035→            </p>
+  1036→  1036→
+  1037→  1037→            {/* The difference */}
+  1038→  1038→            <div className="pt-8 border-t border-[var(--sage)]/20">
+  1039→  1039→              <div className="font-label text-[10px] uppercase tracking-[0.3em] text-[var(--gold)] mb-6">
+  1040→  1040→                The difference
+  1041→  1041→              </div>
+  1042→  1042→              <div className="space-y-4">
+  1043→  1043→                {[
+  1044→  1044→                  ["AI generates options.", "We make decisions."],
+  1045→  1045→                  ["AI produces assets.", "We create positioning."],
+  1046→  1046→                  ["AI follows prompts.", "We identify opportunities."],
+  1047→  1047→                ].map(([left, right], i) => (
+  1048→  1048→                  <motion.div
+  1049→  1049→                    key={i}
+  1050→  1050→                    variants={fadeInUp}
+  1051→  1051→                    className="flex flex-col sm:flex-row gap-2 sm:gap-4 items-start sm:items-center group"
+  1052→  1052→                  >
+  1053→  1053→                    <span className="text-sm text-[var(--bg-forest)]/40 line-through transition-colors duration-300 group-hover:text-[var(--bg-forest)]/20">
+  1054→  1054→                      {left}
+  1055→  1055→                    </span>
+  1056→  1056→                    <ArrowRight className="hidden sm:block text-[var(--gold)] shrink-0 transition-transform duration-300 group-hover:translate-x-1" size={14} />
+  1057→  1057→                    <span className="text-sm sm:text-base font-medium text-[var(--bg-forest)] transition-colors duration-300 group-hover:text-[var(--gold)]">
+  1058→  1058→                      {right}
+  1059→  1059→                    </span>
+  1060→  1060→                  </motion.div>
+  1061→  1061→                ))}
+  1062→  1062→              </div>
+  1063→  1063→            </div>
+  1064→  1064→          </motion.div>
+  1065→  1065→        </div>
+  1066→  1066→
+  1067→  1067→        {/* Founder card */}
+  1068→  1068→        <motion.div
+  1069→  1069→          variants={scaleIn}
+  1070→  1070→          className="mt-16 sm:mt-24 p-6 sm:p-8 bg-[var(--bg-forest)] text-[var(--bg-base)] flex flex-col sm:flex-row items-start sm:items-center gap-6 card-hover-lift animate-border-glow relative overflow-hidden"
+  1071→  1071→        >
+  1072→  1072→          {/* Decorative background accent */}
+  1073→  1073→          <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--gold)]/[0.03] rounded-full -translate-y-1/2 translate-x-1/2" />
+  1074→  1074→          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden shrink-0 ring-2 ring-[var(--gold)]/30 animate-breathe">
+  1075→  1075→            <Image
+  1076→  1076→              src="/founder.jpg"
+  1077→  1077→              alt="Saleh Azgor Rishad — Founder & Creative Director"
+  1078→  1078→              width={96}
+  1079→  1079→              height={96}
+  1080→  1080→              className="w-full h-full object-cover"
+  1081→  1081→            />
+  1082→  1082→          </div>
+  1083→  1083→          <div>
+  1084→  1084→            <div className="font-label text-sm font-semibold text-[var(--gold)]">
+  1085→  1085→              Saleh Azgor Rishad
+  1086→  1086→            </div>
+  1087→  1087→            <div className="font-label text-xs text-[var(--bg-base)]/50 uppercase tracking-wider mt-1">
+  1088→  1088→              Founder &middot; Strategist &middot; Creative Director
+  1089→  1089→            </div>
+  1090→  1090→            <div className="font-label text-[10px] text-[var(--bg-base)]/30 uppercase tracking-widest mt-2">
+  1091→  1091→              <TypewriterText text="Bridging strategy, design, systems, and growth." delay={800} />
+  1092→  1092→            </div>
+  1093→  1093→          </div>
+  1094→  1094→        </motion.div>
+  1095→  1095→      </div>
+  1096→  1096→    </Section>
+  1097→  1097→  );
+  1098→  1098→}
+  1099→  1099→
+  1100→  1100→/* ─── Inside The Thinking ────────────────────────── */
+  1101→  1101→
+  1102→  1102→function InsideTheThinking() {
+  1103→  1103→  return (
+  1104→  1104→    <Section dark id="thinking" className="py-20 sm:py-28 lg:py-36 relative overflow-hidden grain-overlay">
+  1105→  1105→      <SectionParticleCanvas dark />
+  1106→  1106→      <NoiseGrainOverlay />
+  1107→  1107→      {/* Decorative floating shapes */}
+  1108→  1108→      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+  1109→  1109→        <div className="absolute top-[5%] right-[3%] w-14 h-14 border border-[var(--gold)]/5 rotate-45 animate-geo-float-1 hidden lg:block" />
+  1110→  1110→        <div className="absolute bottom-[10%] left-[2%] w-10 h-10 border border-[var(--gold)]/5 rounded-full animate-geo-float-2 hidden lg:block" />
+  1111→  1111→      </div>
+  1112→  1112→      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+  1113→  1113→        <motion.div variants={fadeInUp} className="mb-12 sm:mb-16">
+  1114→  1114→          <div className="font-label text-[10px] uppercase tracking-[0.3em] text-[var(--gold)]/60 mb-4">
+  1115→  1115→            Inside The Thinking
+  1116→  1116→          </div>
+  1117→  1117→          <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-light text-[var(--bg-base)]">
+  1118→  1118→            How we think. Why we choose. What we reject.
+  1119→  1119→          </h2>
+  1120→  1120→        </motion.div>
+  1121→  1121→
+  1122→  1122→        {/* Brief card */}
+  1123→  1123→        <motion.div
+  1124→  1124→          variants={fadeInUp}
+  1125→  1125→          className="mb-12 p-6 sm:p-8 glass-card card-border-glow"
+  1126→  1126→        >
+  1127→  1127→          <div className="flex flex-col sm:flex-row items-start justify-between gap-4 mb-6">
+  1128→  1128→            <div className="font-label text-xs uppercase tracking-widest text-[var(--gold)]">
+  1129→  1129→              01 Project Brief — Confidential v2.4
+  1130→  1130→            </div>
+  1131→  1131→            <div className="font-label text-[10px] uppercase tracking-widest text-[var(--gold)]/50">
+  1132→  1132→              Active Engagement
+  1133→  1133→            </div>
+  1134→  1134→          </div>
+  1135→  1135→          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs sm:text-sm text-[var(--bg-base)]/60">
+  1136→  1136→            <div>
+  1137→  1137→              <span className="text-[var(--bg-base)]/30">Client:</span>{" "}
+  1138→  1138→              ██████████ Industries
+  1139→  1139→            </div>
+  1140→  1140→            <div>
+  1141→  1141→              <span className="text-[var(--bg-base)]/30">Sector:</span>{" "}
+  1142→  1142→              Premium hospitality &amp; lifestyle
+  1143→  1143→            </div>
+  1144→  1144→            <div>
+  1145→  1145→              <span className="text-[var(--bg-base)]/30">Objective:</span>{" "}
+  1146→  1146→              Complete brand repositioning
+  1147→  1147→            </div>
+  1148→  1148→            <div>
+  1149→  1149→              <span className="text-[var(--bg-base)]/30">Timeline:</span> 14
+  1150→  1150→              weeks
+  1151→  1151→            </div>
+  1152→  1152→          </div>
+  1153→  1153→          <div className="mt-6 pt-6 border-t border-[var(--bg-base)]/10">
+  1154→  1154→            <p className="text-sm text-[var(--bg-base)]/50">
+  1155→  1155→              The Brief — Every project starts here. We read between the lines
+  1156→  1156→              — what the client says, and what they actually need.
+  1157→  1157→            </p>
+  1158→  1158→          </div>
+  1159→  1159→        </motion.div>
+  1160→  1160→
+  1161→  1161→        {/* Rejected Directions */}
+  1162→  1162→        <motion.div variants={fadeInUp} className="mb-12">
+  1163→  1163→          <div className="font-label text-xs uppercase tracking-widest text-[var(--gold)]/60 mb-6">
+  1164→  1164→            02 Rejected Directions
+  1165→  1165→          </div>
+  1166→  1166→          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+  1167→  1167→            {[
+  1168→  1168→              {
+  1169→  1169→                label: "Too safe",
+  1170→  1170→                desc: "Blends in with every other premium brand. No tension. No memory.",
+  1171→  1171→              },
+  1172→  1172→              {
+  1173→  1173→                label: "Too trendy",
+  1174→  1174→                desc: "Will feel dated in 18 months. Following, not leading.",
+  1175→  1175→              },
+  1176→  1176→              {
+  1177→  1177→                label: "Wrong audience",
+  1178→  1178→                desc: "Speaks to legacy wealth. Alienates the next-gen buyer.",
+  1179→  1179→              },
+  1180→  1180→            ].map((item, i) => (
+  1181→  1181→              <motion.div
+  1182→  1182→                key={i}
+  1183→  1183→                variants={scaleIn}
+  1184→  1184→                className="p-5 glass-card hover:border-[var(--gold)]/30 transition-all duration-500 card-hover-lift"
+  1185→  1185→              >
+  1186→  1186→                <div className="font-label text-xs uppercase tracking-widest text-[var(--gold)] mb-2 line-through">
+  1187→  1187→                  {item.label}
+  1188→  1188→                </div>
+  1189→  1189→                <p className="text-xs sm:text-sm text-[var(--bg-base)]/50">
+  1190→  1190→                  {item.desc}
+  1191→  1191→                </p>
+  1192→  1192→              </motion.div>
+  1193→  1193→            ))}
+  1194→  1194→          </div>
+  1195→  1195→        </motion.div>
+  1196→  1196→
+  1197→  1197→        {/* Positioning + Color */}
+  1198→  1198→        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+  1199→  1199→          {/* Positioning */}
+  1200→  1200→          <motion.div variants={slideInLeft} className="p-6 sm:p-8 glass-card card-border-glow">
+  1201→  1201→            <div className="font-label text-xs uppercase tracking-widest text-[var(--gold)]/60 mb-6">
+  1202→  1202→              03 The Positioning Decision
+  1203→  1203→            </div>
+  1204→  1204→            <p className="text-xs sm:text-sm text-[var(--bg-base)]/50 mb-6">
+  1205→  1205→              Before a single pixel is placed, we map the strategic territory.
+  1206→  1206→              Position first. Design second.
+  1207→  1207→            </p>
+  1208→  1208→            <div className="grid grid-cols-3 gap-2 text-center mb-4">
+  1209→  1209→              {["Traditional", "Premium", "Affordable"].map((l) => (
+  1210→  1210→                <div key={l} className="font-label text-[9px] uppercase tracking-widest text-[var(--bg-base)]/30 py-2">
+  1211→  1211→                  {l}
+  1212→  1212→                </div>
+  1213→  1213→              ))}
+  1214→  1214→              {["Modern", "Mass Market", "Heritage"].map((l) => (
+  1215→  1215→                <div key={l} className="font-label text-[9px] uppercase tracking-widest text-[var(--bg-base)]/30 py-2">
+  1216→  1216→                  {l}
+  1217→  1217→                </div>
+  1218→  1218→              ))}
+  1219→  1219→            </div>
+  1220→  1220→            <div className="mt-4 p-4 bg-[var(--gold)]/10 border border-[var(--gold)]/20 animate-border-glow">
+  1221→  1221→              <div className="font-label text-xs text-[var(--gold)] mb-1">
+  1222→  1222→                We position here
+  1223→  1223→              </div>
+  1224→  1224→              <p className="text-sm text-[var(--bg-base)]/70">
+  1225→  1225→                Premium-modern with editorial restraint. Unapologetically
+  1226→  1226→                elevated.
+  1227→  1227→              </p>
+  1228→  1228→            </div>
+  1229→  1229→          </motion.div>
+  1230→  1230→
+  1231→  1231→          {/* Color Palette */}
+  1232→  1232→          <motion.div variants={slideInRight} className="p-6 sm:p-8 glass-card card-border-glow">
+  1233→  1233→            <div className="font-label text-xs uppercase tracking-widest text-[var(--gold)]/60 mb-6">
+  1234→  1234→              04 Visual Explorations
+  1235→  1235→            </div>
+  1236→  1236→            <p className="text-xs sm:text-sm text-[var(--bg-base)]/50 mb-6">
+  1237→  1237→              Color, type, texture — every choice narrowing toward the system.
+  1238→  1238→            </p>
+  1239→  1239→
+  1240→  1240→            {/* Colors */}
+  1241→  1241→            <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-6">
+  1242→  1242→              {[
+  1243→  1243→                { name: "Forest", hex: "#27332C" },
+  1244→  1244→                { name: "Sage", hex: "#4B6355" },
+  1245→  1245→                { name: "Gold", hex: "#C6A56B" },
+  1246→  1246→                { name: "Ivory", hex: "#F5F4EE" },
+  1247→  1247→                { name: "Dark Sage", hex: "#1E2A23" },
+  1248→  1248→                { name: "Gold Light", hex: "#D4BA8A" },
+  1249→  1249→              ].map((c) => (
+  1250→  1250→                <div key={c.hex} className="text-center group cursor-pointer">
+  1251→  1251→                  <div
+  1252→  1252→                    className="w-full aspect-square mb-2 transition-transform duration-300 group-hover:scale-110 group-hover:shadow-lg"
+  1253→  1253→                    style={{ backgroundColor: c.hex }}
+  1254→  1254→                  />
+  1255→  1255→                  <div className="font-label text-[8px] uppercase tracking-wider text-[var(--bg-base)]/40">
+  1256→  1256→                    {c.name}
+  1257→  1257→                  </div>
+  1258→  1258→                </div>
+  1259→  1259→              ))}
+  1260→  1260→            </div>
+  1261→  1261→
+  1262→  1262→            {/* Typography */}
+  1263→  1263→            <div className="space-y-3">
+  1264→  1264→              <div className="flex items-baseline gap-3 group">
+  1265→  1265→                <span className="font-display text-xl sm:text-2xl text-[var(--bg-base)]/80 transition-colors duration-300 group-hover:text-[var(--gold)]">
+  1266→  1266→                  Aa
+  1267→  1267→                </span>
+  1268→  1268→                <span className="font-label text-[9px] uppercase tracking-widest text-[var(--bg-base)]/40">
+  1269→  1269→                  Cormorant Garamond &middot; Headlines
+  1270→  1270→                </span>
+  1271→  1271→              </div>
+  1272→  1272→              <div className="flex items-baseline gap-3 group">
+  1273→  1273→                <span className="font-label text-base sm:text-lg text-[var(--bg-base)]/80 transition-colors duration-300 group-hover:text-[var(--gold)]">
+  1274→  1274→                  Aa
+  1275→  1275→                </span>
+  1276→  1276→                <span className="font-label text-[9px] uppercase tracking-widest text-[var(--bg-base)]/40">
+  1277→  1277→                  Syne &middot; Labels &middot; Navigation
+  1278→  1278→                </span>
+  1279→  1279→              </div>
+  1280→  1280→              <div className="flex items-baseline gap-3 group">
+  1281→  1281→                <span className="text-base sm:text-lg text-[var(--bg-base)]/80 transition-colors duration-300 group-hover:text-[var(--gold)]">
+  1282→  1282→                  Aa
+  1283→  1283→                </span>
+  1284→  1284→                <span className="font-label text-[9px] uppercase tracking-widest text-[var(--bg-base)]/40">
+  1285→  1285→                  Inter &middot; Body &middot; Descriptions
+  1286→  1286→                </span>
+  1287→  1287→              </div>
+  1288→  1288→            </div>
+  1289→  1289→          </motion.div>
+  1290→  1290→        </div>
+  1291→  1291→      </div>
+  1292→  1292→    </Section>
+  1293→  1293→  );
+  1294→  1294→}
+  1295→  1295→
+  1296→  1296→/* ─── Case Study Card ────────────────────────────── */
+  1297→  1297→
+  1298→  1298→function CaseStudyCard({
+  1299→  1299→  study,
+  1300→  1300→  index,
+  1301→  1301→}: {
+  1302→  1302→  study: (typeof CASE_STUDIES)[0];
+  1303→  1303→  index: number;
+  1304→  1304→}) {
+  1305→  1305→  return (
+  1306→  1306→    <motion.div
+  1307→  1307→      variants={fadeInUp}
+  1308→  1308→      className="border border-[var(--bg-forest)]/10 hover:border-[var(--gold)]/30 transition-all duration-500 group card-hover-lift card-border-glow draw-border-card"
+  1309→  1309→    >
+  1310→  1310→      <TiltCard className="p-6 sm:p-8 relative">
+  1311→  1311→        {/* Header */}
+  1312→  1312→        <div className="flex flex-col sm:flex-row items-start justify-between gap-4 mb-6">
+  1313→  1313→          <div>
+  1314→  1314→            <div className="font-label text-[10px] uppercase tracking-widest text-[var(--sage)] mb-2">
+  1315→  1315→              Case Study {study.id}
+  1316→  1316→            </div>
+  1317→  1317→            <h3 className="font-display text-xl sm:text-2xl font-light text-[var(--bg-forest)] group-hover:text-[var(--gold)] transition-colors duration-300">
+  1318→  1318→              {study.title}
+  1319→  1319→            </h3>
+  1320→  1320→            <div className="font-label text-xs text-[var(--sage)] mt-1">
+  1321→  1321→              {study.category}
+  1322→  1322→            </div>
+  1323→  1323→          </div>
+  1324→  1324→        </div>
+  1325→  1325→
+  1326→  1326→        {/* Situation */}
+  1327→  1327→        <p className="text-sm text-[var(--bg-forest)]/60 leading-relaxed mb-6">
+  1328→  1328→          {study.situation}
+  1329→  1329→        </p>
+  1330→  1330→
+  1331→  1331→        {/* What changed */}
+  1332→  1332→        <div className="font-label text-[10px] uppercase tracking-widest text-[var(--gold)] mb-3">
+  1333→  1333→          What We Changed
+  1334→  1334→        </div>
+  1335→  1335→        <p className="text-sm text-[var(--bg-forest)]/70 mb-6">{study.change}</p>
+  1336→  1336→
+  1337→  1337→        {/* Before/After */}
+  1338→  1338→        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+  1339→  1339→          <div className="p-4 bg-[var(--bg-forest)]/5">
+  1340→  1340→            <div className="font-label text-[9px] uppercase tracking-widest text-[var(--bg-forest)]/30 mb-2">
+  1341→  1341→              Before Strategy
+  1342→  1342→            </div>
+  1343→  1343→            <p className="text-sm text-[var(--bg-forest)]/50 italic">
+  1344→  1344→              &ldquo;{study.before}&rdquo;
+  1345→  1345→            </p>
+  1346→  1346→          </div>
+  1347→  1347→          <div className="p-4 bg-[var(--gold)]/5 border border-[var(--gold)]/10 animate-border-glow">
+  1348→  1348→            <div className="font-label text-[9px] uppercase tracking-widest text-[var(--gold)]/60 mb-2">
+  1349→  1349→              After Strategy
+  1350→  1350→            </div>
+  1351→  1351→            <p className="text-sm text-[var(--bg-forest)]/80 italic">
+  1352→  1352→              &ldquo;{study.after}&rdquo;
+  1353→  1353→            </p>
+  1354→  1354→          </div>
+  1355→  1355→        </div>
+  1356→  1356→
+  1357→  1357→        {/* Result */}
+  1358→  1358→        <div className="pt-6 border-t border-[var(--bg-forest)]/10">
+  1359→  1359→          <div className="font-label text-[9px] uppercase tracking-widest text-[var(--gold)] mb-2">
+  1360→  1360→            Key Insight
+  1361→  1361→          </div>
+  1362→  1362→          <p className="text-sm text-[var(--bg-forest)]/70">{study.insight}</p>
+  1363→  1363→        </div>
+  1364→  1364→      </TiltCard>
+  1365→  1365→    </motion.div>
+  1366→  1366→  );
+  1367→  1367→}
+  1368→  1368→
+  1369→  1369→/* ─── Work / Case Studies ────────────────────────── */
+  1370→  1370→
+  1371→  1371→function WorkSection() {
+  1372→  1372→  return (
+  1373→  1373→    <Section id="work" className="py-20 sm:py-28 lg:py-36">
+  1374→  1374→      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  1375→  1375→        <motion.div variants={fadeInUp} className="mb-12 sm:mb-16">
+  1376→  1376→          <div className="font-label text-[10px] uppercase tracking-[0.3em] text-[var(--sage)] mb-4">
+  1377→  1377→            Chapter 03 — The Work
+  1378→  1378→          </div>
+  1379→  1379→          <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-light text-[var(--bg-forest)]">
+  1380→  1380→            Business Transformations
+  1381→  1381→          </h2>
+  1382→  1382→          <p className="text-sm sm:text-base text-[var(--bg-forest)]/50 mt-4">
+  1383→  1383→            We don&apos;t show what we designed. We show what changed.
+  1384→  1384→          </p>
+  1385→  1385→        </motion.div>
+  1386→  1386→
+  1387→  1387→        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+  1388→  1388→          {CASE_STUDIES.map((study, i) => (
+  1389→  1389→            <CaseStudyCard key={study.id} study={study} index={i} />
+  1390→  1390→          ))}
+  1391→  1391→        </div>
+  1392→  1392→
+  1393→  1393→        {/* More Transformations */}
+  1394→  1394→        <motion.div
+  1395→  1395→          variants={fadeInUp}
+  1396→  1396→          className="mt-16 sm:mt-24 pt-12 border-t border-[var(--bg-forest)]/10 section-divider"
+  1397→  1397→        >
+  1398→  1398→          <div className="font-label text-[10px] uppercase tracking-[0.3em] text-[var(--sage)] mb-8">
+  1399→  1399→            More Transformations
+  1400→  1400→          </div>
+  1401→  1401→          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+  1402→  1402→            {MORE_TRANSFORMATIONS.map((item, i) => (
+  1403→  1403→              <motion.div
+  1404→  1404→                key={item.name}
+  1405→  1405→                variants={fadeInUp}
+  1406→  1406→                className="p-5 bg-[var(--bg-forest)]/[0.03] hover:bg-[var(--bg-forest)]/[0.06] transition-all duration-500 group card-hover-lift"
+  1407→  1407→              >
+  1408→  1408→                <div className="font-label text-xs font-semibold text-[var(--bg-forest)] mb-1 group-hover:text-[var(--gold)] transition-colors duration-300">
+  1409→  1409→                  {item.name}
+  1410→  1410→                </div>
+  1411→  1411→                <div className="font-label text-[9px] uppercase tracking-wider text-[var(--sage)] mb-3">
+  1412→  1412→                  {item.category}
+  1413→  1413→                </div>
+  1414→  1414→                <p className="text-xs text-[var(--bg-forest)]/40 line-through mb-2">
+  1415→  1415→                  &ldquo;{item.before}&rdquo;
+  1416→  1416→                </p>
+  1417→  1417→                <p className="text-xs text-[var(--bg-forest)]/70 mb-3">
+  1418→  1418→                  &ldquo;{item.after}&rdquo;
+  1419→  1419→                </p>
+  1420→  1420→                <div className="pt-3 border-t border-[var(--bg-forest)]/5">
+  1421→  1421→                  <p className="text-[11px] text-[var(--bg-forest)]/50 italic">
+  1422→  1422→                    {item.insight}
+  1423→  1423→                  </p>
+  1424→  1424→                </div>
+  1425→  1425→              </motion.div>
+  1426→  1426→            ))}
+  1427→  1427→          </div>
+  1428→  1428→        </motion.div>
+  1429→  1429→      </div>
+  1430→  1430→    </Section>
+  1431→  1431→  );
+  1432→  1432→}
+  1433→  1433→
+  1434→  1434→/* ─── The Method ─────────────────────────────────── */
+  1435→  1435→
+  1436→  1436→function TheMethod() {
+  1437→  1437→  return (
+  1438→  1438→    <Section dark id="method" className="py-20 sm:py-28 lg:py-36 relative overflow-hidden grain-overlay">
+  1439→  1439→      <SectionParticleCanvas dark />
+  1440→  1440→      <NoiseGrainOverlay />
+  1441→  1441→      {/* Decorative floating shapes */}
+  1442→  1442→      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+  1443→  1443→        <div className="absolute top-[10%] right-[5%] w-24 h-24 border border-[var(--gold)]/5 rotate-45 animate-geo-float-1 hidden lg:block" />
+  1444→  1444→        <div className="absolute bottom-[15%] left-[3%] w-16 h-16 border border-[var(--gold)]/5 animate-geo-float-2 hidden lg:block" style={{ clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)" }} />
+  1445→  1445→      </div>
+  1446→  1446→      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+  1447→  1447→        <motion.div variants={fadeInUp} className="mb-12 sm:mb-16">
+  1448→  1448→          <div className="font-label text-[10px] uppercase tracking-[0.3em] text-[var(--gold)]/60 mb-4">
+  1449→  1449→            The Method
+  1450→  1450→          </div>
+  1451→  1451→          <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-light text-[var(--bg-base)]">
+  1452→  1452→            The Compile Method.
+  1453→  1453→          </h2>
+  1454→  1454→          <p className="text-sm sm:text-base text-[var(--bg-base)]/50 mt-4">
+  1455→  1455→            Five stages. One system. No shortcuts.
+  1456→  1456→          </p>
+  1457→  1457→        </motion.div>
+  1458→  1458→
+  1459→  1459→        <div className="space-y-0">
+  1460→  1460→          {METHOD_STAGES.map((stage, i) => (
+  1461→  1461→            <motion.div
+  1462→  1462→              key={stage.num}
+  1463→  1463→              variants={fadeInUp}
+  1464→  1464→              className="group grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-8 py-8 sm:py-10 border-b border-[var(--bg-base)]/10 hover:border-[var(--gold)]/20 transition-all duration-500 method-row"
+  1465→  1465→            >
+  1466→  1466→              <div className="md:col-span-1">
+  1467→  1467→                <div className="font-display text-3xl sm:text-4xl font-light text-[var(--gold)]/30 group-hover:text-[var(--gold)]/60 transition-colors duration-500">
+  1468→  1468→                  {stage.num}
+  1469→  1469→                </div>
+  1470→  1470→              </div>
+  1471→  1471→              <div className="md:col-span-2">
+  1472→  1472→                <div className="font-label text-xs sm:text-sm uppercase tracking-widest text-[var(--gold)] group-hover:text-[var(--gold-light)] transition-colors duration-300">
+  1473→  1473→                  Stage {stage.num}
+  1474→  1474→                </div>
+  1475→  1475→                <h3 className="font-display text-xl sm:text-2xl font-light text-[var(--bg-base)] mt-1 group-hover:text-[var(--gold)] transition-colors duration-300">
+  1476→  1476→                  {stage.title}
+  1477→  1477→                </h3>
+  1478→  1478→              </div>
+  1479→  1479→              <div className="md:col-span-9">
+  1480→  1480→                <p className="text-sm sm:text-base text-[var(--bg-base)]/50 group-hover:text-[var(--bg-base)]/70 transition-colors duration-300 leading-relaxed">
+  1481→  1481→                  {stage.desc}
+  1482→  1482→                </p>
+  1483→  1483→              </div>
+  1484→  1484→            </motion.div>
+  1485→  1485→          ))}
+  1486→  1486→        </div>
+  1487→  1487→      </div>
+  1488→  1488→    </Section>
+  1489→  1489→  );
+  1490→  1490→}
+  1491→  1491→
+  1492→  1492→/* ─── The Strategist ──────────────────────────────── */
+  1493→  1493→
+  1494→  1494→function TheStrategist() {
+  1495→  1495→  const timeline = [
+  1496→  1496→    {
+  1497→  1497→      year: "2019",
+  1498→  1498→      text: "Started questioning why most brand agencies deliver assets instead of outcomes.",
+  1499→  1499→    },
+  1500→  1500→    {
+  1501→  1501→      year: "2021",
+  1502→  1502→      text: "Led the first brand transformation that doubled a client's perceived value in 90 days.",
+  1503→  1503→    },
+  1504→  1504→    {
+  1505→  1505→      year: "2023",
+  1506→  1506→      text: "Founded Compile Creative to bridge the gap between strategy and design.",
+  1507→  1507→    },
+  1508→  1508→    {
+  1509→  1509→      year: "2025",
+  1510→  1510→      text: "The Compile Method crystallized into a repeatable system for building premium brands.",
+  1511→  1511→    },
+  1512→  1512→  ];
+  1513→  1513→
+  1514→  1514→  return (
+  1515→  1515→    <Section id="about" className="py-20 sm:py-28 lg:py-36">
+  1516→  1516→      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  1517→  1517→        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20">
+  1518→  1518→          <motion.div variants={slideInLeft} className="lg:col-span-5">
+  1519→  1519→            <div className="font-label text-[10px] uppercase tracking-[0.3em] text-[var(--sage)] mb-4">
+  1520→  1520→              Meet The Strategist
+  1521→  1521→            </div>
+  1522→  1522→            <h2 className="font-display text-2xl sm:text-3xl font-light text-[var(--bg-forest)] leading-snug mb-6 relative">
+  1523→  1523→              <span className="absolute -top-6 -left-4 text-5xl text-[var(--gold)]/15 font-display animate-quote-float select-none">&ldquo;</span>
+  1524→  1524→              Most brands don&apos;t have a design problem. They have a
+  1525→  1525→              perception problem.
+  1526→  1526→            </h2>
+  1527→  1527→            {/* Founder photo card */}
+  1528→  1528→            <motion.div
+  1529→  1529→              variants={scaleIn}
+  1530→  1530→              className="relative overflow-hidden mb-6 group"
+  1531→  1531→            >
+  1532→  1532→              <div className="relative w-full aspect-[3/4] max-w-[280px] overflow-hidden">
+  1533→  1533→                <Image
+  1534→  1534→                  src="/founder-standing.jpg"
+  1535→  1535→                  alt="Saleh Azgor Rishad — Founder & Creative Director"
+  1536→  1536→                  width={280}
+  1537→  1537→                  height={373}
+  1538→  1538→                  className="w-full h-full object-cover animate-ken-burns group-hover:scale-110 transition-transform duration-1000"
+  1539→  1539→                />
+  1540→  1540→                {/* Gold overlay on hover */}
+  1541→  1541→                <div className="absolute inset-0 bg-[var(--gold)]/0 group-hover:bg-[var(--gold)]/10 transition-colors duration-500" />
+  1542→  1542→                {/* Decorative corner border */}
+  1543→  1543→                <div className="absolute top-3 left-3 w-8 h-8 border-t border-l border-[var(--gold)]/30" />
+  1544→  1544→                <div className="absolute bottom-3 right-3 w-8 h-8 border-b border-r border-[var(--gold)]/30" />
+  1545→  1545→              </div>
+  1546→  1546→              {/* Name overlay */}
+  1547→  1547→              <div className="mt-4 p-4 bg-[var(--bg-forest)] text-[var(--bg-base)] inline-block card-hover-lift animate-border-glow">
+  1548→  1548→                <div className="font-label text-sm font-semibold text-[var(--gold)]">
+  1549→  1549→                  Saleh Azgor Rishad
+  1550→  1550→                </div>
+  1551→  1551→                <div className="font-label text-[10px] text-[var(--bg-base)]/50 uppercase tracking-wider mt-1">
+  1552→  1552→                  Founder &amp; Creative Director
+  1553→  1553→                </div>
+  1554→  1554→              </div>
+  1555→  1555→            </motion.div>
+  1556→  1556→          </motion.div>
+  1557→  1557→
+  1558→  1558→          <motion.div variants={slideInRight} className="lg:col-span-7">
+  1559→  1559→            <div className="space-y-0 relative method-connecting-line">
+  1560→  1560→              {timeline.map((item, i) => (
+  1561→  1561→                <motion.div
+  1562→  1562→                  key={item.year}
+  1563→  1563→                  variants={fadeInUp}
+  1564→  1564→                  className="flex gap-4 sm:gap-6 py-6 border-b border-[var(--bg-forest)]/10 last:border-b-0 group"
+  1565→  1565→                >
+  1566→  1566→                  <div className="relative">
+  1567→  1567→                    <div className="font-label text-sm text-[var(--gold)] shrink-0 w-12 sm:w-16 transition-colors duration-300 group-hover:text-[var(--gold-light)]">
+  1568→  1568→                      {item.year}
+  1569→  1569→                    </div>
+  1570→  1570→                    {/* Timeline dot */}
+  1571→  1571→                    <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-[var(--gold)]/20 group-hover:bg-[var(--gold)] group-hover:scale-150 transition-all duration-300 hidden sm:block" />
+  1572→  1572→                  </div>
+  1573→  1573→                  <p className="text-sm sm:text-base text-[var(--bg-forest)]/60 leading-relaxed transition-colors duration-300 group-hover:text-[var(--bg-forest)]/80">
+  1574→  1574→                    {item.text}
+  1575→  1575→                  </p>
+  1576→  1576→                </motion.div>
+  1577→  1577→              ))}
+  1578→  1578→            </div>
+  1579→  1579→          </motion.div>
+  1580→  1580→        </div>
+  1581→  1581→      </div>
+  1582→  1582→    </Section>
+  1583→  1583→  );
+  1584→  1584→}
+  1585→  1585→
+  1586→  1586→/* ─── Scroll Progress Indicator ───────────────────── */
+  1587→  1587→
+  1588→  1588→function ScrollProgress() {
+  1589→  1589→  const { scrollYProgress } = useScroll();
+  1590→  1590→
+  1591→  1591→  return (
+  1592→  1592→    <motion.div
+  1593→  1593→      style={{ scaleX: scrollYProgress }}
+  1594→  1594→      className="fixed top-0 left-0 right-0 h-[2px] bg-[var(--gold)]/60 z-[60] origin-left"
+  1595→  1595→    />
+  1596→  1596→  );
+  1597→  1597→}
+  1598→  1598→
+  1599→  1599→/* ─── CTA / Audit Section ────────────────────────── */
+  1600→  1600→
+  1601→  1601→function CTASection() {
+  1602→  1602→  return (
+  1603→  1603→    <Section dark className="py-20 sm:py-28 lg:py-36 relative overflow-hidden grain-overlay">
+  1604→  1604→      {/* Background pattern */}
+  1605→  1605→      <div
+  1606→  1606→        className="absolute inset-0 opacity-[0.02]"
+  1607→  1607→        style={{
+  1608→  1608→          backgroundImage: `radial-gradient(circle at 1px 1px, var(--gold) 1px, transparent 0)`,
+  1609→  1609→          backgroundSize: "32px 32px",
+  1610→  1610→        }}
+  1611→  1611→      />
+  1612→  1612→      <SectionParticleCanvas dark />
+  1613→  1613→      <NoiseGrainOverlay />
+  1614→  1614→
+  1615→  1615→      {/* Decorative floating shapes */}
+  1616→  1616→      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+  1617→  1617→        <div className="absolute top-[20%] left-[5%] w-20 h-20 border border-[var(--gold)]/5 rotate-12 animate-geo-float-2 hidden lg:block" />
+  1618→  1618→        <div className="absolute bottom-[20%] right-[8%] w-14 h-14 border border-[var(--gold)]/5 animate-geo-float-1 hidden lg:block" style={{ clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)" }} />
+  1619→  1619→      </div>
+  1620→  1620→
+  1621→  1621→      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+  1622→  1622→        <motion.div variants={fadeInUp}>
+  1623→  1623→          <div className="font-label text-[10px] uppercase tracking-[0.3em] text-[var(--gold)]/60 mb-6">
+  1624→  1624→            Client Outcomes
+  1625→  1625→          </div>
+  1626→  1626→          <div className="p-6 sm:p-8 glass-card card-border-glow mb-12 sm:mb-16 text-left relative">
+  1627→  1627→            <span className="absolute top-4 left-4 text-4xl text-[var(--gold)]/15 font-display animate-quote-float select-none">&ldquo;</span>
+  1628→  1628→            <p className="font-display text-lg sm:text-xl md:text-2xl font-light text-[var(--bg-base)]/80 leading-relaxed italic relative z-10">
+  1629→  1629→              &ldquo;They didn&apos;t just redesign our website. They
+  1630→  1630→              fundamentally rewired how we communicate our value to the market.
+  1631→  1631→              Our sales cycle shortened by 40% in the first quarter.&rdquo;
+  1632→  1632→            </p>
+  1633→  1633→            <div className="mt-6 pt-6 border-t border-[var(--bg-base)]/10">
+  1634→  1634→              <div className="font-label text-sm font-semibold text-[var(--gold)]">
+  1635→  1635→                Marcus Chen
+  1636→  1636→              </div>
+  1637→  1637→              <div className="font-label text-xs text-[var(--bg-base)]/40">
+  1638→  1638→                Founder &amp; CEO, Nexus OS &middot; B2B SaaS &middot; Series
+  1639→  1639→                B
+  1640→  1640→              </div>
+  1641→  1641→            </div>
+  1642→  1642→          </div>
+  1643→  1643→        </motion.div>
+  1644→  1644→
+  1645→  1645→        <motion.div variants={fadeInUp}>
+  1646→  1646→          <h2 className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-light text-[var(--bg-base)] mb-4 sm:mb-6 leading-[1.15]">
+  1647→  1647→            <SplitRevealText text="Let's build something your competitors can't replicate." />
+  1648→  1648→          </h2>
+  1649→  1649→          <p className="text-sm sm:text-base text-[var(--bg-base)]/50 max-w-xl mx-auto mb-8 sm:mb-10 leading-relaxed">
+  1650→  1650→            Start with a 30-minute strategy audit. No pitch deck. No pressure.
+  1651→  1651→            Just clarity on your positioning and the exact systems you need to
+  1652→  1652→            scale.
+  1653→  1653→          </p>
+  1654→  1654→          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+  1655→  1655→            <a
+  1656→  1656→              href="mailto:hello@compilecreative.com"
+  1657→  1657→              className="font-label text-xs sm:text-sm uppercase tracking-widest px-8 py-4 bg-[var(--gold)] text-[var(--bg-forest)] hover:bg-[var(--gold-light)] transition-all duration-300 btn-gold animate-pulse-glow min-w-[44px] min-h-[44px] flex items-center justify-center"
+  1658→  1658→            >
+  1659→  1659→              Book Your Strategy Audit
+  1660→  1660→            </a>
+  1661→  1661→            <a
+  1662→  1662→              href="#work"
+  1663→  1663→              className="font-label text-xs sm:text-sm uppercase tracking-widest px-8 py-4 border border-[var(--bg-base)]/20 text-[var(--bg-base)]/60 hover:border-[var(--gold)] hover:text-[var(--gold)] transition-all duration-300 min-w-[44px] min-h-[44px] flex items-center justify-center"
+  1664→  1664→            >
+  1665→  1665→              Or explore our work
+  1666→  1666→            </a>
+  1667→  1667→          </div>
+  1668→  1668→        </motion.div>
+  1669→  1669→      </div>
+  1670→  1670→    </Section>
+  1671→  1671→  );
+  1672→  1672→}
+  1673→  1673→
+  1674→  1674→/* ─── Footer ─────────────────────────────────────── */
+  1675→  1675→
+  1676→  1676→function Footer() {
+  1677→  1677→  return (
+  1678→  1678→    <footer className="bg-[var(--bg-forest)] text-[var(--bg-base)] pt-16 sm:pt-20 pb-8 sm:pb-10 border-t border-[var(--bg-base)]/10 grain-overlay">
+  1679→  1679→      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  1680→  1680→        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 sm:gap-12 mb-12 sm:mb-16">
+  1681→  1681→          {/* Brand */}
+  1682→  1682→          <div className="sm:col-span-2 lg:col-span-2">
+  1683→  1683→            <div className="flex items-center gap-3 mb-4 sm:mb-6">
+  1684→  1684→              <Image
+  1685→  1685→                src="/logo.png"
+  1686→  1686→                alt="Compile Creative Logo"
+  1687→  1687→                width={40}
+  1688→  1688→                height={40}
+  1689→  1689→                className="h-10 w-auto"
+  1690→  1690→              />
+  1691→  1691→              <h3 className="font-label text-xl sm:text-2xl font-bold tracking-tight text-[var(--gold)]">
+  1692→  1692→                COMPILE CREATIVE
+  1693→  1693→              </h3>
+  1694→  1694→            </div>
+  1695→  1695→            <p className="text-sm text-[var(--bg-base)]/50 max-w-sm leading-relaxed mb-6">
+  1696→  1696→              We bridge strategy, design, systems, and growth to build brands
+  1697→  1697→              that command a premium and scale efficiently.
+  1698→  1698→            </p>
+  1699→  1699→            {/* Founder in footer */}
+  1700→  1700→            <div className="flex items-center gap-3">
+  1701→  1701→              <div className="w-10 h-10 rounded-full overflow-hidden ring-1 ring-[var(--gold)]/20">
+  1702→  1702→                <Image
+  1703→  1703→                  src="/founder.jpg"
+  1704→  1704→                  alt="Saleh Azgor Rishad"
+  1705→  1705→                  width={40}
+  1706→  1706→                  height={40}
+  1707→  1707→                  className="w-full h-full object-cover"
+  1708→  1708→                />
+  1709→  1709→              </div>
+  1710→  1710→              <div>
+  1711→  1711→                <div className="font-label text-xs font-semibold text-[var(--gold)]/80">
+  1712→  1712→                  Saleh Azgor Rishad
+  1713→  1713→                </div>
+  1714→  1714→                <div className="font-label text-[9px] text-[var(--bg-base)]/30 uppercase tracking-wider">
+  1715→  1715→                  Founder & Creative Director
+  1716→  1716→                </div>
+  1717→  1717→              </div>
+  1718→  1718→            </div>
+  1719→  1719→          </div>
+  1720→  1720→
+  1721→  1721→          {/* Navigation */}
+  1722→  1722→          <div>
+  1723→  1723→            <h4 className="font-label text-xs font-semibold uppercase tracking-widest text-[var(--bg-base)]/30 mb-4 sm:mb-6">
+  1724→  1724→              Navigation
+  1725→  1725→            </h4>
+  1726→  1726→            <ul className="space-y-3">
+  1727→  1727→              {NAV_LINKS.map((link) => (
+  1728→  1728→                <li key={link.href + link.label}>
+  1729→  1729→                  <a
+  1730→  1730→                    href={link.href}
+  1731→  1731→                    className="text-sm font-medium text-[var(--bg-base)]/60 hover:text-[var(--gold)] transition-colors duration-300 gold-underline flex items-center gap-1.5 magnetic-link"
+  1732→  1732→                    {...(link.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+  1733→  1733→                  >
+  1734→  1734→                    {link.label}
+  1735→  1735→                    {link.external && <ExternalLink size={10} />}
+  1736→  1736→                  </a>
+  1737→  1737→                </li>
+  1738→  1738→              ))}
+  1739→  1739→            </ul>
+  1740→  1740→          </div>
+  1741→  1741→
+  1742→  1742→          {/* Connect */}
+  1743→  1743→          <div>
+  1744→  1744→            <h4 className="font-label text-xs font-semibold uppercase tracking-widest text-[var(--bg-base)]/30 mb-4 sm:mb-6">
+  1745→  1745→              Connect
+  1746→  1746→            </h4>
+  1747→  1747→            <ul className="space-y-3">
+  1748→  1748→              <li>
+  1749→  1749→                <a
+  1750→  1750→                  href="mailto:hello@compilecreative.com"
+  1751→  1751→                  className="text-sm text-[var(--bg-base)]/60 hover:text-[var(--gold)] transition-colors duration-300 flex items-center gap-2 gold-underline magnetic-link"
+  1752→  1752→                >
+  1753→  1753→                  <Mail size={14} /> hello@compilecreative.com
+  1754→  1754→                </a>
+  1755→  1755→              </li>
+  1756→  1756→              <li>
+  1757→  1757→                <a
+  1758→  1758→                  href="https://linkedin.com"
+  1759→  1759→                  target="_blank"
+  1760→  1760→                  rel="noopener noreferrer"
+  1761→  1761→                  className="text-sm text-[var(--bg-base)]/60 hover:text-[var(--gold)] transition-colors duration-300 flex items-center gap-2 gold-underline magnetic-link"
+  1762→  1762→                >
+  1763→  1763→                  <Linkedin size={14} /> LinkedIn
+  1764→  1764→                </a>
+  1765→  1765→              </li>
+  1766→  1766→              <li>
+  1767→  1767→                <a
+  1768→  1768→                  href="https://twitter.com"
+  1769→  1769→                  target="_blank"
+  1770→  1770→                  rel="noopener noreferrer"
+  1771→  1771→                  className="text-sm text-[var(--bg-base)]/60 hover:text-[var(--gold)] transition-colors duration-300 flex items-center gap-2 gold-underline magnetic-link"
+  1772→  1772→                >
+  1773→  1773→                  <Twitter size={14} /> Twitter / X
+  1774→  1774→                </a>
+  1775→  1775→              </li>
+  1776→  1776→            </ul>
+  1777→  1777→          </div>
+  1778→  1778→        </div>
+  1779→  1779→
+  1780→  1780→        {/* Bottom bar */}
+  1781→  1781→        <div className="pt-6 sm:pt-8 border-t border-[var(--bg-base)]/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[var(--bg-base)]/30">
+  1782→  1782→          <p>&copy; 2026 Compile Creative. All rights reserved.</p>
+  1783→  1783→          <div className="flex gap-6">
+  1784→  1784→            <a href="#" className="hover:text-[var(--gold)] transition-colors">
+  1785→  1785→              Privacy Policy
+  1786→  1786→            </a>
+  1787→  1787→            <a href="#" className="hover:text-[var(--gold)] transition-colors">
+  1788→  1788→              Terms of Service
+  1789→  1789→            </a>
+  1790→  1790→          </div>
+  1791→  1791→        </div>
+  1792→  1792→      </div>
+  1793→  1793→    </footer>
+  1794→  1794→  );
+  1795→  1795→}
+  1796→  1796→
+  1797→  1797→/* ─── Main Page ──────────────────────────────────── */
+  1798→  1798→
+  1799→  1799→export default function Home() {
+  1800→  1800→  return (
+  1801→  1801→    <main className="min-h-screen flex flex-col relative">
+  1802→  1802→      <MagneticCursor />
+  1803→  1803→      <ParticleTrail />
+  1804→  1804→      <ScrollProgress />
+  1805→  1805→      <Navigation />
+  1806→  1806→      <HeroSection />
+  1807→  1807→      <AgencyMarquee />
+  1808→  1808→      <CostOfLookingAverage />
+  1809→  1809→      <StatsBar />
+  1810→  1810→      <TheFoundation />
+  1811→  1811→      <InsideTheThinking />
+  1812→  1812→      <WorkSection />
+  1813→  1813→      <AgencyMarquee />
+  1814→  1814→      <TheMethod />
+  1815→  1815→      <TheStrategist />
+  1816→  1816→      <CTASection />
+  1817→  1817→      <Footer />
+  1818→  1818→    </main>
+  1819→  1819→  );
+  1820→  1820→}
+  1821→  1821→
